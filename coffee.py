@@ -1,9 +1,61 @@
 import slack
 import os
+import time
+from datetime import datetime
+import pymongo
 from pathlib import Path
 from dotenv import load_dotenv
 from flask import Flask, request, Response
 from slackeventsapi import SlackEventAdapter
+from apscheduler.schedulers.background import BackgroundScheduler
+
+"""
+@param [in] userId
+@param [in] userName
+
+returns userModel
+"""
+today = datetime.today().weekday()
+todayHour = datetime.now().hour
+channels = []
+
+
+def createUser(userId, userName):
+    return {
+        "_id": userId,
+        "name": userName,
+        "drinks": [0, 0, 0, 0, 0]
+    }
+
+# If it friday at 4-5pm announce the winner and clear the database
+
+
+def clean_database():
+    # update time
+    today = datetime.today().weekday()
+    todayHour = datetime.now().hour
+
+    # if today == 4 and todayHour == 4:
+    scoreboardData = []
+    queryUsers = collection.find()
+    for users in queryUsers:
+        totalDrinks = 0
+        for drinks in users["drinks"]:
+            totalDrinks += drinks
+        scoreboardData.append((users["name"], totalDrinks))
+
+    scoreboardData.sort(key=lambda i: i[1], reverse=True)
+
+    for channel in channels:
+        client.chat_postMessage(
+            channel=channel, text=f"☕ Congratulations to {scoreboardData[0][0]} drinking a total of {scoreboardData[0][1]} cups of coffee this week! ☕")
+
+    collection.update_many({}, {"$set": {"drinks": [0, 0, 0, 0, 0]}})
+
+
+scheduler = BackgroundScheduler()
+scheduler.add_job(func=clean_database, trigger="interval", minutes=60)
+scheduler.start()
 
 # Load dotenv
 env_path = Path('.')/'.env'
@@ -15,8 +67,14 @@ slack_event_adapter = SlackEventAdapter(
     os.environ['SIGNING_SECRET'], '/slack/events', app)
 
 # init client and bot_id
+
 client = slack.WebClient(token=os.environ['SLACK_TOKEN'])
 BOT_ID = client.api_call("auth.test")["user_id"]
+
+# init mongo
+mongoClient = pymongo.MongoClient(os.environ['MONGO_URL'])
+db = mongoClient["coffee"]
+collection = db["users"]
 
 
 # Handles messages from anyone in the channel the bot is in
@@ -44,8 +102,25 @@ def tally():
     user_id = data.get('user_id')
     user_name = data.get('user_name')
     text = data.get('text')
-    client.chat_postMessage(
-        channel=channel_id, text=f"Hi {user_name}, Got your /tally for {text}")
+    if today > 4:
+        client.chat_postMessage(
+            channel=channel_id, text=f"Sorry {user_name}, No coffee on the weekend")
+    else:
+        queryUser = collection.find_one({"_id": user_id})
+        if queryUser is None:
+            client.chat_postMessage(
+                channel=channel_id, text=f"{user_name} has not joined the competition, use /join-comp to join")
+            return Response(), 200
+
+        oldDrinks = queryUser["drinks"]
+        oldDrinks[today] += 1
+
+        collection.update_one(
+            {"_id": user_id}, {"$set": {"drinks": oldDrinks}})
+
+        client.chat_postMessage(
+            channel=channel_id, text=f"Hi {user_name}, You have drinken {oldDrinks[today]} cups of coffee today!")
+
     return Response(), 200
 
 # Handles reset-tally
@@ -57,8 +132,23 @@ def resetTally():
     channel_id = data.get('channel_id')
     user_id = data.get('user_id')
     user_name = data.get('user_name')
-    client.chat_postMessage(
-        channel=channel_id, text=f"Hi {user_name}, resetting your tally for today")
+    if today > 4:
+        client.chat_postMessage(
+            channel=channel_id, text=f"Sorry {user_name}, No coffee on the weekend")
+    else:
+        queryUser = collection.find_one({"_id": user_id})
+        if queryUser is None:
+            client.chat_postMessage(
+                channel=channel_id, text=f"{user_name} has not joined the competition, use /join-comp to join")
+            return Response(), 200
+
+        oldDrinks = queryUser["drinks"]
+        oldDrinks[today] = 0
+
+        collection.update_one(
+            {"_id": user_id}, {"$set": {"drinks": oldDrinks}})
+        client.chat_postMessage(
+            channel=channel_id, text=f"Hi {user_name}, resetting your tally for today")
     return Response(), 200
 
 # Handles Scoreboard
@@ -70,8 +160,101 @@ def scoreboard():
     channel_id = data.get('channel_id')
     user_id = data.get('user_id')
     user_name = data.get('user_name')
+    if today > 4:
+        client.chat_postMessage(
+            channel=channel_id, text=f"Sorry {user_name}, No coffee on the weekend")
+    else:
+        scoreboardData = []
+        queryUsers = collection.find()
+        for users in queryUsers:
+            totalDrinks = 0
+            for drinks in users["drinks"]:
+                totalDrinks += drinks
+            scoreboardData.append((users["name"], totalDrinks))
+
+        scoreboardData.sort(key=lambda i: i[1], reverse=True)
+        client.chat_postMessage(
+            channel=channel_id, text=f"Coffee Scoreboard {time.strftime('%A, %d. %B %Y %I:%M:%S %p')}")
+        client.chat_postMessage(
+            channel=channel_id, text="-----------------------------------------")
+        for result in scoreboardData:
+            client.chat_postMessage(
+                channel=channel_id, text=f"{result[0]}: {result[1]} cups of coffee")
+        client.chat_postMessage(
+            channel=channel_id, text="-----------------------------------------")
+
+    return Response(), 200
+
+
+@app.route('/join-comp', methods=['POST'])
+def join():
+    data = request.form
+    channel_id = data.get('channel_id')
+    user_id = data.get('user_id')
+    user_name = data.get('user_name')
+
+    newUser = createUser(user_id, user_name)
+    collection.insert_one(newUser)
+
     client.chat_postMessage(
-        channel=channel_id, text=f"Hi {user_name}, Here is your scoreboard")
+        channel=channel_id, text=f"Hi {user_name}, Welcome to the battlefield!")
+    return Response(), 200
+
+
+@app.route('/leave-comp', methods=['POST'])
+def leave():
+    data = request.form
+    channel_id = data.get('channel_id')
+    user_id = data.get('user_id')
+    user_name = data.get('user_name')
+
+    collection.delete_one({"_id": user_id})
+
+    client.chat_postMessage(
+        channel=channel_id, text=f"Hi {user_name}, You have left the competition.")
+    return Response(), 200
+
+
+@app.route('/announce-winner-on', methods=['POST'])
+def announce_on():
+    data = request.form
+    channel_id = data.get('channel_id')
+
+    if channel_id in channels:
+        client.chat_postMessage(
+            channel=channel_id, text="channel has already turned on announement")
+        return Response(), 200
+
+    channels.append(channel_id)
+    client.chat_postMessage(
+        channel=channel_id, text="I will announce the winner on Friday from 4-5pm")
+    return Response(), 200
+
+
+@app.route('/announce-winner-off', methods=['POST'])
+def announce_off():
+    data = request.form
+    channel_id = data.get('channel_id')
+
+    if channel_id not in channels:
+        client.chat_postMessage(
+            channel=channel_id, text="channel has already turned off announement")
+        return Response(), 200
+
+    channels.remove(channel_id)
+    client.chat_postMessage(
+        channel=channel_id, text="I will not announce the winner")
+
+    return Response(), 200
+
+
+@app.route('/test', methods=['POST'])
+def test():
+    data = request.form
+    channel_id = data.get('channel_id')
+    client.chat_postMessage(
+        channel=channel_id, text="Nice Try")
+    clean_database()
     return Response(), 200
 
 
