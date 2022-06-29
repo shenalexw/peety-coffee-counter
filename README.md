@@ -11,6 +11,8 @@
 ---
 
 ## Description
+beta
+
 Slack bot that counts the number of coffee drinken a day and a daily leaderboard.
 
 Everyweek you are able to add up your coffee tally and try to defeat those on the leaderboards

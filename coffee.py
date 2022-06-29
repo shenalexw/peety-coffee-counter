@@ -9,15 +9,16 @@ from flask import Flask, request, Response
 from slackeventsapi import SlackEventAdapter
 from apscheduler.schedulers.background import BackgroundScheduler
 
+today = datetime.today().weekday()
+todayHour = datetime.now().hour
+channels = []
+
 """
 @param [in] userId
 @param [in] userName
 
 returns userModel
 """
-today = datetime.today().weekday()
-todayHour = datetime.now().hour
-channels = []
 
 
 def createUser(userId, userName):
@@ -193,6 +194,12 @@ def join():
     user_id = data.get('user_id')
     user_name = data.get('user_name')
 
+    queryUser = collection.find_one({"_id": user_id})
+    if queryUser:
+        client.chat_postMessage(
+            channel=channel_id, text=f"Hi {user_name}, you have already joined the fight!")
+        return Response(), 200
+
     newUser = createUser(user_id, user_name)
     collection.insert_one(newUser)
 
@@ -207,6 +214,12 @@ def leave():
     channel_id = data.get('channel_id')
     user_id = data.get('user_id')
     user_name = data.get('user_name')
+
+    queryUser = collection.find_one({"_id": user_id})
+    if queryUser in None:
+        client.chat_postMessage(
+            channel=channel_id, text=f"Hi {user_name}, you have already left the fight!")
+        return Response(), 200
 
     collection.delete_one({"_id": user_id})
 
