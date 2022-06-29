@@ -181,7 +181,7 @@ def scoreboard():
             scoreboardData.append((users["name"], totalDrinks))
 
         scoreboardData.sort(key=lambda i: i[1], reverse=True)
-        now_pst = datetime.now(timezone('PST'))
+        now_pst = datetime.now(timezone('US/Pacific'))
         client.chat_postMessage(
             channel=channel_id, text=f"Coffee Scoreboard {now_pst.strftime('%A, %d. %B %Y %I:%M:%S %p')}")
         client.chat_postMessage(
