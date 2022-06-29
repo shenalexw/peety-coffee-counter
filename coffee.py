@@ -9,6 +9,9 @@ from flask import Flask, request, Response
 from slackeventsapi import SlackEventAdapter
 from apscheduler.schedulers.background import BackgroundScheduler
 
+os.environ["TZ"] = "America/Seattle"
+time.tzset()
+
 today = datetime.today().weekday()
 todayHour = datetime.now().hour
 channels = []
@@ -52,6 +55,7 @@ def clean_database():
                 channel=channel, text=f"☕ Congratulations to {scoreboardData[0][0]} drinking a total of {scoreboardData[0][1]} cups of coffee this week! ☕")
 
         collection.update_many({}, {"$set": {"drinks": [0, 0, 0, 0, 0]}})
+
 
 
 scheduler = BackgroundScheduler()
