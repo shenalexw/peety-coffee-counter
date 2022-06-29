@@ -188,7 +188,7 @@ def scoreboard():
             channel=channel_id, text="-----------------------------------------")
         for result in scoreboardData:
             client.chat_postMessage(
-                channel=channel_id, text=f"{result[0]}: {result[1]} cups of coffee")
+                channel=channel_id, text=f"{result[0]}: {result[1]} cups of coffee |")
         client.chat_postMessage(
             channel=channel_id, text="-----------------------------------------")
 
@@ -275,7 +275,7 @@ def test():
     channel_id = data.get('channel_id')
     client.chat_postMessage(
         channel=channel_id, text="Nice Try")
-#     clean_database()
+    print(data)
     return Response(), 200
 
 
