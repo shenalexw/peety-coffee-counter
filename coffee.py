@@ -103,6 +103,7 @@ def tally():
     data = request.form
     channel_id = data.get('channel_id')
     user_id = data.get('user_id')
+    user_name = data.get('user_name')
     text = data.get('text')
 
     queryUser = collection.find_one({"_id": user_id})
@@ -224,18 +225,26 @@ def changeName():
     data = request.form
     channel_id = data.get('channel_id')
     user_id = data.get('user_id')
+    user_name = data.get('user_name')
     text = data.get('text')
 
     queryUser = collection.find_one({"_id": user_id})
+    if queryUser is None:
+        client.chat_postMessage(
+            channel=channel_id, text=f"{user_name} has not joined the competition, use /join-comp to join")
+        return Response(), 200
+    
+    displayName = queryUser["name"]
+    
     if text is None:
         client.chat_postMessage(
-            channel=channel_id, text=f"Hi {queryUser["name"]}, Please put new name after slash command")
+            channel=channel_id, text=f"Hi {displayName}, Please put new name after slash command")
         return Response(), 200
 
     newName = strip(text)
     if len(newName) > 12:
         client.chat_postMessage(
-            channel=channel_id, text=f"Hi {queryUser["name"]}, Your new name is longer than 12 letters")
+            channel=channel_id, text=f"Hi {displayName}, Your new name is longer than 12 letters")
         return Response(), 200
     
     collection.update_one(
