@@ -231,7 +231,7 @@ def changeName():
     queryUser = collection.find_one({"_id": user_id})
     if queryUser is None:
         client.chat_postMessage(
-            channel=channel_id, text=f"{user_name} has not joined the competition, use /join-comp to join")
+            channel=channel_id, text=f"{user_name} has notjoined the competition, use /join-comp to join")
         return Response(), 200
     
     displayName = queryUser["name"]
@@ -241,7 +241,7 @@ def changeName():
             channel=channel_id, text=f"Hi {displayName}, Please put new name after slash command")
         return Response(), 200
 
-    newName = strip(text)
+    newName = text.strip()
     if len(newName) > 12:
         client.chat_postMessage(
             channel=channel_id, text=f"Hi {displayName}, Your new name is longer than 12 letters")
