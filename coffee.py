@@ -9,8 +9,8 @@ from flask import Flask, request, Response
 from slackeventsapi import SlackEventAdapter
 from apscheduler.schedulers.background import BackgroundScheduler
 
-os.environ["TZ"] = "America/Seattle"
-time.tzset()
+# os.environ["TZ"] = "America/Seattle"
+# time.tzset()
 
 today = datetime.today().weekday()
 todayHour = datetime.now().hour
