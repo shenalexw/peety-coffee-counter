@@ -2,6 +2,7 @@ import slack
 import os
 import time
 from datetime import datetime
+from pytz import timezone
 import pymongo
 from pathlib import Path
 from dotenv import load_dotenv
@@ -119,7 +120,7 @@ def tally():
             client.chat_postMessage(
             channel=channel_id, text=f"{user_name} 🤔🤔🤔")
             return Response(), 200
-            
+
         oldDrinks[today] += 1
 
         collection.update_one(
@@ -180,8 +181,9 @@ def scoreboard():
             scoreboardData.append((users["name"], totalDrinks))
 
         scoreboardData.sort(key=lambda i: i[1], reverse=True)
+        now_pst = datetime.now(timezone('PST'))
         client.chat_postMessage(
-            channel=channel_id, text=f"Coffee Scoreboard {time.strftime('%A, %d. %B %Y %I:%M:%S %p')}")
+            channel=channel_id, text=f"Coffee Scoreboard {now_pst.strftime('%A, %d. %B %Y %I:%M:%S %p')}")
         client.chat_postMessage(
             channel=channel_id, text="-----------------------------------------")
         for result in scoreboardData:
