@@ -103,31 +103,32 @@ def tally():
     data = request.form
     channel_id = data.get('channel_id')
     user_id = data.get('user_id')
-    user_name = data.get('user_name')
     text = data.get('text')
+
+    queryUser = collection.find_one({"_id": user_id})
+    if queryUser is None:
+        client.chat_postMessage(
+            channel=channel_id, text=f"{user_name} has not joined the competition, use /join-comp to join")
+        return Response(), 200
+
     if today > 4:
         client.chat_postMessage(
             channel=channel_id, text=f"Sorry {user_name}, No coffee on the weekend")
-    else:
-        queryUser = collection.find_one({"_id": user_id})
-        if queryUser is None:
-            client.chat_postMessage(
-                channel=channel_id, text=f"{user_name} has not joined the competition, use /join-comp to join")
-            return Response(), 200
+        return Response(), 200
 
-        oldDrinks = queryUser["drinks"]
-        if oldDrinks[today] > 9:
-            client.chat_postMessage(
-            channel=channel_id, text=f"{user_name} 🤔🤔🤔")
-            return Response(), 200
-
-        oldDrinks[today] += 1
-
-        collection.update_one(
-            {"_id": user_id}, {"$set": {"drinks": oldDrinks}})
-
+    oldDrinks = queryUser["drinks"]
+    if oldDrinks[today] > 9:
         client.chat_postMessage(
-            channel=channel_id, text=f"Hi {user_name}, You have drinken {oldDrinks[today]} cups of coffee today!")
+        channel=channel_id, text=f"{user_name} 🤔🤔🤔")
+        return Response(), 200
+
+    oldDrinks[today] += 1
+
+    collection.update_one(
+        {"_id": user_id}, {"$set": {"drinks": oldDrinks}})
+
+    client.chat_postMessage(
+        channel=channel_id, text=f"Hi {queryUser["name"]}, You have drinken {oldDrinks[today]} cups of coffee today!")
 
     return Response(), 200
 
@@ -213,6 +214,33 @@ def join():
 
     client.chat_postMessage(
         channel=channel_id, text=f"Hi {user_name}, Welcome to the battlefield!")
+    return Response(), 200
+
+
+@app.route('/change-name', methods=['POST'])
+def changeName():
+    data = request.form
+    channel_id = data.get('channel_id')
+    user_id = data.get('user_id')
+    text = data.get('text')
+
+    queryUser = collection.find_one({"_id": user_id})
+    if text is None:
+        client.chat_postMessage(
+            channel=channel_id, text=f"Hi {queryUser["name"]}, Please put new name after slash command")
+        return Response(), 200
+
+    newName = strip(text)
+    if len(newName) > 12:
+        client.chat_postMessage(
+            channel=channel_id, text=f"Hi {queryUser["name"]}, Your new name is longer than 12 letters")
+        return Response(), 200
+    
+    collection.update_one(
+            {"_id": user_id}, {"$set": {"name": newName}})
+
+    client.chat_postMessage(
+            channel=channel_id, text=f"Hi {newName}, Nice Name!")
     return Response(), 200
 
 
