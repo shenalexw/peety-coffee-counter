@@ -36,22 +36,22 @@ def clean_database():
     today = datetime.today().weekday()
     todayHour = datetime.now().hour
 
-    # if today == 4 and todayHour == 4:
-    scoreboardData = []
-    queryUsers = collection.find()
-    for users in queryUsers:
-        totalDrinks = 0
-        for drinks in users["drinks"]:
-            totalDrinks += drinks
-        scoreboardData.append((users["name"], totalDrinks))
+    if today == 4 and todayHour == 4:
+        scoreboardData = []
+        queryUsers = collection.find()
+        for users in queryUsers:
+            totalDrinks = 0
+            for drinks in users["drinks"]:
+                totalDrinks += drinks
+            scoreboardData.append((users["name"], totalDrinks))
 
-    scoreboardData.sort(key=lambda i: i[1], reverse=True)
+        scoreboardData.sort(key=lambda i: i[1], reverse=True)
 
-    for channel in channels:
-        client.chat_postMessage(
-            channel=channel, text=f"☕ Congratulations to {scoreboardData[0][0]} drinking a total of {scoreboardData[0][1]} cups of coffee this week! ☕")
+        for channel in channels:
+            client.chat_postMessage(
+                channel=channel, text=f"☕ Congratulations to {scoreboardData[0][0]} drinking a total of {scoreboardData[0][1]} cups of coffee this week! ☕")
 
-    collection.update_many({}, {"$set": {"drinks": [0, 0, 0, 0, 0]}})
+        collection.update_many({}, {"$set": {"drinks": [0, 0, 0, 0, 0]}})
 
 
 scheduler = BackgroundScheduler()
