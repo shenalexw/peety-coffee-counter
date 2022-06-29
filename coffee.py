@@ -236,12 +236,13 @@ def changeName():
     
     displayName = queryUser["name"]
     
-    if text is None:
+    newName = text.strip()
+
+    if newName == ""
         client.chat_postMessage(
             channel=channel_id, text=f"Hi {displayName}, Please put new name after slash command")
         return Response(), 200
 
-    newName = text.strip()
     if len(newName) > 12:
         client.chat_postMessage(
             channel=channel_id, text=f"Hi {displayName}, Your new name is longer than 12 letters")
