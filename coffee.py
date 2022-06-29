@@ -110,6 +110,8 @@ def tally():
         client.chat_postMessage(
             channel=channel_id, text=f"{user_name} has not joined the competition, use /join-comp to join")
         return Response(), 200
+    
+    displayName = queryUser["name"]
 
     if today > 4:
         client.chat_postMessage(
@@ -128,7 +130,7 @@ def tally():
         {"_id": user_id}, {"$set": {"drinks": oldDrinks}})
 
     client.chat_postMessage(
-        channel=channel_id, text=f"Hi {queryUser["name"]}, You have drinken {oldDrinks[today]} cups of coffee today!")
+        channel=channel_id, text=f"Hi {displayName}, You have drinken {oldDrinks[today]} cups of coffee today!")
 
     return Response(), 200
 
