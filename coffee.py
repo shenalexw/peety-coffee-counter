@@ -115,11 +115,11 @@ def tally():
             return Response(), 200
 
         oldDrinks = queryUser["drinks"]
-
-        if oldDrinks > 9:
+        if oldDrinks[today] > 9:
             client.chat_postMessage(
-            channel=channel_id, text=f"🤔🤔🤔")
-
+            channel=channel_id, text=f"{user_name} 🤔🤔🤔")
+            return Response(), 200
+            
         oldDrinks[today] += 1
 
         collection.update_one(
