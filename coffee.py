@@ -267,7 +267,7 @@ def test():
     channel_id = data.get('channel_id')
     client.chat_postMessage(
         channel=channel_id, text="Nice Try")
-    clean_database()
+#     clean_database()
     return Response(), 200
 
 
