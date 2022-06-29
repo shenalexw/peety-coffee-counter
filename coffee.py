@@ -216,7 +216,7 @@ def leave():
     user_name = data.get('user_name')
 
     queryUser = collection.find_one({"_id": user_id})
-    if queryUser in None:
+    if queryUser is None:
         client.chat_postMessage(
             channel=channel_id, text=f"Hi {user_name}, you have already left the fight!")
         return Response(), 200
