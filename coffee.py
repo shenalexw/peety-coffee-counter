@@ -29,6 +29,12 @@ collection = db["users"]
 today = datetime.now(timezone('US/Pacific')).weekday()
 todayHour = datetime.now(timezone('US/Pacific')).hour
 
+# options
+DRINKOPTIONS = {
+    "coffee" : 1
+    "tea" : 0.5
+}
+
 "--------------- Functions ----------------"
 """
 @param [in] userId
@@ -75,6 +81,7 @@ def tally():
     channel_id = data.get('channel_id')
     user_id = data.get('user_id')
     user_name = data.get('user_name')
+    text = text.get('text')
 
     queryUser = collection.find_one({"_id": user_id})
     if queryUser is None:
@@ -84,9 +91,9 @@ def tally():
     
     displayName = queryUser["name"]
 
-    if today > 4:
+    if today > 4 and todayHour > 5:
         client.chat_postMessage(
-            channel=channel_id, text=f"Sorry {displayName}, No coffee on the weekend")
+            channel=channel_id, text=f"Sorry {displayName}, No coffee at this time")
         return Response(), 200
 
     oldDrinks = queryUser["drinks"]
@@ -95,7 +102,18 @@ def tally():
         channel=channel_id, text=f"{displayName} Are you sure about that? 🤔🤔🤔")
         return Response(), 200
 
-    oldDrinks[today] += 1
+    userChoice = text.strip().lower()
+    choiceKey = ""
+    if userChoice == "" or userChoice == "coffee":
+        choiceKey = "coffee"
+    else if userChoice == "tea":
+        choiceKey = "tea"
+    else:
+        client.chat_postMessage(
+        channel=channel_id, text=f"Hi {displayName}, {userChoice} is not a valid drink")
+        return Response(), 200
+
+    oldDrinks[today] += DRINKOPTIONS[choiceKey]
 
     collection.update_one(
         {"_id": user_id}, {"$set": {"drinks": oldDrinks}})
@@ -120,12 +138,6 @@ def resetTally():
         return Response(), 200
     
     displayName = queryUser["name"]
-
-    if today > 4:
-        client.chat_postMessage(
-            channel=channel_id, text=f"Sorry {displayName}, No coffee on the weekend")
-        return Response(), 200
-
     oldDrinks = queryUser["drinks"]
     oldDrinks[today] = 0
 
@@ -141,6 +153,7 @@ def scoreboard():
     channel_id = data.get('channel_id')
     user_id = data.get('user_id')
     user_name = data.get('user_name')
+    text = text.get('text')
     queryUser = collection.find_one({"_id": user_id})
     if queryUser is None:
         client.chat_postMessage(
@@ -148,11 +161,6 @@ def scoreboard():
         return Response(), 200
     
     displayName = queryUser["name"]
-
-    if today > 4:
-        client.chat_postMessage(
-            channel=channel_id, text=f"Sorry {displayName}, No coffee on the weekend")
-        return Response(), 200
 
     scoreboardData = []
     queryUsers = collection.find()
