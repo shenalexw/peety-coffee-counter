@@ -31,7 +31,7 @@ todayHour = datetime.now(timezone('US/Pacific')).hour
 
 # options
 DRINKOPTIONS = {
-    "coffee" : 1
+    "coffee" : 1,
     "tea" : 0.5
 }
 
