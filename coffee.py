@@ -104,7 +104,6 @@ def tally():
     channel_id = data.get('channel_id')
     user_id = data.get('user_id')
     user_name = data.get('user_name')
-    text = data.get('text')
 
     queryUser = collection.find_one({"_id": user_id})
     if queryUser is None:
@@ -116,13 +115,13 @@ def tally():
 
     if today > 4:
         client.chat_postMessage(
-            channel=channel_id, text=f"Sorry {user_name}, No coffee on the weekend")
+            channel=channel_id, text=f"Sorry {displayName}, No coffee on the weekend")
         return Response(), 200
 
     oldDrinks = queryUser["drinks"]
     if oldDrinks[today] > 9:
         client.chat_postMessage(
-        channel=channel_id, text=f"{user_name} 🤔🤔🤔")
+        channel=channel_id, text=f"{displayName} 🤔🤔🤔")
         return Response(), 200
 
     oldDrinks[today] += 1
@@ -144,23 +143,27 @@ def resetTally():
     channel_id = data.get('channel_id')
     user_id = data.get('user_id')
     user_name = data.get('user_name')
+
+    queryUser = collection.find_one({"_id": user_id})
+    if queryUser is None:
+        client.chat_postMessage(
+            channel=channel_id, text=f"{user_name} has not joined the competition, use /join-comp to join")
+        return Response(), 200
+    
+    displayName = queryUser["name"]
+
     if today > 4:
         client.chat_postMessage(
-            channel=channel_id, text=f"Sorry {user_name}, No coffee on the weekend")
-    else:
-        queryUser = collection.find_one({"_id": user_id})
-        if queryUser is None:
-            client.chat_postMessage(
-                channel=channel_id, text=f"{user_name} has not joined the competition, use /join-comp to join")
-            return Response(), 200
+            channel=channel_id, text=f"Sorry {displayName}, No coffee on the weekend")
+        return Response(), 200
 
-        oldDrinks = queryUser["drinks"]
-        oldDrinks[today] = 0
+    oldDrinks = queryUser["drinks"]
+    oldDrinks[today] = 0
 
-        collection.update_one(
-            {"_id": user_id}, {"$set": {"drinks": oldDrinks}})
-        client.chat_postMessage(
-            channel=channel_id, text=f"Hi {user_name}, resetting your tally for today")
+    collection.update_one(
+        {"_id": user_id}, {"$set": {"drinks": oldDrinks}})
+    client.chat_postMessage(
+        channel=channel_id, text=f"Hi {displayName}, resetting your tally for today")
     return Response(), 200
 
 # Handles Scoreboard
@@ -172,29 +175,38 @@ def scoreboard():
     channel_id = data.get('channel_id')
     user_id = data.get('user_id')
     user_name = data.get('user_name')
+    queryUser = collection.find_one({"_id": user_id})
+    if queryUser is None:
+        client.chat_postMessage(
+            channel=channel_id, text=f"{user_name} has not joined the competition, use /join-comp to join")
+        return Response(), 200
+    
+    displayName = queryUser["name"]
+
     if today > 4:
         client.chat_postMessage(
-            channel=channel_id, text=f"Sorry {user_name}, No coffee on the weekend")
-    else:
-        scoreboardData = []
-        queryUsers = collection.find()
-        for users in queryUsers:
-            totalDrinks = 0
-            for drinks in users["drinks"]:
-                totalDrinks += drinks
-            scoreboardData.append((users["name"], totalDrinks))
+            channel=channel_id, text=f"Sorry {displayName}, No coffee on the weekend")
+        return Response(), 200
 
-        scoreboardData.sort(key=lambda i: i[1], reverse=True)
-        now_pst = datetime.now(timezone('US/Pacific'))
+    scoreboardData = []
+    queryUsers = collection.find()
+    for users in queryUsers:
+        totalDrinks = 0
+        for drinks in users["drinks"]:
+            totalDrinks += drinks
+        scoreboardData.append((users["name"], totalDrinks))
+
+    scoreboardData.sort(key=lambda i: i[1], reverse=True)
+    now_pst = datetime.now(timezone('US/Pacific'))
+    client.chat_postMessage(
+        channel=channel_id, text=f"Coffee Scoreboard {now_pst.strftime('%A, %d. %B %Y %I:%M:%S %p')}")
+    client.chat_postMessage(
+        channel=channel_id, text="-----------------------------------------")
+    for result in scoreboardData:
         client.chat_postMessage(
-            channel=channel_id, text=f"Coffee Scoreboard {now_pst.strftime('%A, %d. %B %Y %I:%M:%S %p')}")
-        client.chat_postMessage(
-            channel=channel_id, text="-----------------------------------------")
-        for result in scoreboardData:
-            client.chat_postMessage(
-                channel=channel_id, text=f"{result[0]}: {result[1]} cups of coffee |")
-        client.chat_postMessage(
-            channel=channel_id, text="-----------------------------------------")
+            channel=channel_id, text=f"{result[0]}: {result[1]} cups of coffee |")
+    client.chat_postMessage(
+        channel=channel_id, text="-----------------------------------------")
 
     return Response(), 200
 
