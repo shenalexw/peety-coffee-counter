@@ -248,7 +248,7 @@ def changeName():
     
     displayName = queryUser["name"]
     
-    newName = text.strip()
+    newName = text.strip().lower().capitalize()
 
     if newName == "":
         client.chat_postMessage(
