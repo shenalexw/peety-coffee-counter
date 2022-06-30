@@ -106,7 +106,7 @@ def tally():
     choiceKey = ""
     if userChoice == "" or userChoice == "coffee":
         choiceKey = "coffee"
-    else if userChoice == "tea":
+    elif userChoice == "tea":
         choiceKey = "tea"
     else:
         client.chat_postMessage(
