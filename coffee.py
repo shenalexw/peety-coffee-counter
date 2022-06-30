@@ -196,9 +196,10 @@ def scoreboard():
     displayOtherDrinks = queryOtherUser["drinks"]
     for drink in displayOtherDrinks:
         totalDrink += drink
-    
     client.chat_postMessage(
-            channel=channel_id, text=f"{displayOtherName} | Total Cups of Coffee: {totalDrink}")
+            channel=channel_id, text=f"Displaying Stats for {displayOtherName}")
+    client.chat_postMessage(
+            channel=channel_id, text=f"Total Cups of Coffee: {totalDrink}")
     client.chat_postMessage(
             channel=channel_id, text=f"Mon: {displayOtherDrinks[0]}, Tues: {displayOtherDrinks[1]}, Wed: {displayOtherDrinks[2]}, Thurs {displayOtherDrinks[3]}, Fri: {displayOtherDrinks[4]}")
     return Response(), 200
