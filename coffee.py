@@ -20,8 +20,6 @@ channels = []
 
 returns userModel
 """
-
-
 def createUser(userId, userName):
     return {
         "_id": userId,
@@ -79,17 +77,6 @@ mongoClient = pymongo.MongoClient(os.environ['MONGO_URL'])
 db = mongoClient["coffee"]
 collection = db["users"]
 
-
-# Handles messages from anyone in the channel the bot is in
-# @slack_event_adapter.on('message')
-# def message(payload):
-#     event = payload.get('event', {})
-#     channel_id = event.get('channel')
-#     user_id = event.get('user')
-#     text = event.get('text')
-
-#     if BOT_ID != user_id:
-#         client.chat_postMessage(channel=channel_id, text=text)
 
 @app.route("/")
 def index():
@@ -335,6 +322,21 @@ def test():
         channel=channel_id, text="Nice Try")
     print(data)
     return Response(), 200
+
+@app.route('/congrats', methods=['POST'])
+def congrats():
+    data = request.form
+    channel_id = data.get('channel_id')
+    text = data.get('text')
+    if text == os.environ['PASSWORD']:
+        client.chat_postMessage(
+            channel=channel_id, text="Announcing the winner")
+        # clean_database()
+    else:
+        client.chat_postMessage(
+            channel=channel_id, text="Access Denied")
+    return Response(), 200
+
 
 
 if __name__ == "__main__":
