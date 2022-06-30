@@ -10,8 +10,8 @@ from flask import Flask, request, Response
 from slackeventsapi import SlackEventAdapter
 from apscheduler.schedulers.background import BackgroundScheduler
 
-today = datetime.today().weekday()
-todayHour = datetime.now().hour
+today = datetime.now(timezone('US/Pacific')).weekday()
+todayHour = datetime.now(timezone('US/Pacific')).hour
 channels = []
 
 """
@@ -34,8 +34,8 @@ def createUser(userId, userName):
 
 def clean_database():
     # update time
-    today = datetime.today().weekday()
-    todayHour = datetime.now().hour
+    today = datetime.now(timezone('US/Pacific')).weekday()
+    todayHour = datetime.now(timezone('US/Pacific')).hour
 
     if today == 4 and todayHour == 4:
         scoreboardData = []
