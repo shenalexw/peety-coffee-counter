@@ -162,27 +162,49 @@ def scoreboard():
     
     displayName = queryUser["name"]
 
-    scoreboardData = []
-    queryUsers = collection.find()
-    for users in queryUsers:
-        totalDrinks = 0
-        for drinks in users["drinks"]:
-            totalDrinks += drinks
-        scoreboardData.append((users["name"], totalDrinks))
+    userText = text.strip().lower().capitalize()
+    if userText == ""
+        scoreboardData = []
+        queryUsers = collection.find()
+        for users in queryUsers:
+            totalDrinks = 0
+            for drinks in users["drinks"]:
+                totalDrinks += drinks
+            scoreboardData.append((users["name"], totalDrinks))
 
-    scoreboardData.sort(key=lambda i: i[1], reverse=True)
-    now_pst = datetime.now(timezone('US/Pacific'))
-    client.chat_postMessage(
-        channel=channel_id, text=f"Coffee Scoreboard {now_pst.strftime('%A, %d. %B %Y %I:%M:%S %p')}")
-    client.chat_postMessage(
-        channel=channel_id, text="-------------------------------")
-    for result in scoreboardData:
+        scoreboardData.sort(key=lambda i: i[1], reverse=True)
+        now_pst = datetime.now(timezone('US/Pacific'))
         client.chat_postMessage(
-            channel=channel_id, text=f"{result[0]}: {result[1]} cups of coffee")
+            channel=channel_id, text=f"Coffee Scoreboard {now_pst.strftime('%A, %d. %B %Y %I:%M:%S %p')}")
+        client.chat_postMessage(
+            channel=channel_id, text="-------------------------------")
+        for result in scoreboardData:
+            client.chat_postMessage(
+                channel=channel_id, text=f"{result[0]}: {result[1]} cups of coffee")
+        client.chat_postMessage(
+            channel=channel_id, text="-------------------------------")
+        return Response(), 200
+    
+    queryOtherUser = collection.find_one({"name": userText})
+    if queryOtherUser is None:
+        client.chat_postMessage(
+            channel=channel_id, text=f"Sorry {displayName}, {userText} is not on the leaderboard")
+        return Response(), 200
+    
+    totalDrink = 0
+    displayOtherName = queryOtherUser["name"]
+    displayOtherDrinks = queryOtherUser["drinks"]
+    for drink in displayOtherDrinks:
+        totalDrink += drink
+    
     client.chat_postMessage(
-        channel=channel_id, text="-------------------------------")
-
+            channel=channel_id, text=f"{displayOtherName} | Total Cups of Coffee: {totalDrink}")
+    client.chat_postMessage(
+            channel=channel_id, text=f"Mon: {displayOtherDrinks[0]}, Tues: {displayOtherDrinks[1]}, Wed: {displayOtherDrinks[2]}, Thurs {displayOtherDrinks[3]}, Fri: {displayOtherDrinks[4]}")
     return Response(), 200
+    
+
+    
 
 
 @app.route('/join-comp', methods=['POST'])
