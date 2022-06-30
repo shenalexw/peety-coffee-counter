@@ -238,7 +238,7 @@ def changeName():
     
     newName = text.strip()
 
-    if newName == ""
+    if newName == "":
         client.chat_postMessage(
             channel=channel_id, text=f"Hi {displayName}, Please put new name after slash command")
         return Response(), 200
