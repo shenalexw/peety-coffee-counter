@@ -259,6 +259,12 @@ def changeName():
         client.chat_postMessage(
             channel=channel_id, text=f"Hi {displayName}, Your new name is longer than 12 letters")
         return Response(), 200
+
+    queryName = collection.find_one({"name": newName})
+    if queryName is not None:
+        client.chat_postMessage(
+            channel=channel_id, text=f"Hi {user_name}, an existing user is already using {newName}")
+        return Response(), 200
     
     collection.update_one(
             {"_id": user_id}, {"$set": {"name": newName}})
