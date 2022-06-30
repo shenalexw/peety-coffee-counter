@@ -7,13 +7,29 @@ import pymongo
 from pathlib import Path
 from dotenv import load_dotenv
 from flask import Flask, request, Response
-from slackeventsapi import SlackEventAdapter
-from apscheduler.schedulers.background import BackgroundScheduler
 
+"--------------- inits ----------------"
+# Load dotenv
+env_path = Path('.')/'.env'
+load_dotenv(dotenv_path=env_path)
+
+# init flask and slack event adapter
+app = Flask(__name__)
+
+# init client and bot_id
+client = slack.WebClient(token=os.environ['SLACK_TOKEN'])
+BOT_ID = client.api_call("auth.test")["user_id"]
+
+# init mongo
+mongoClient = pymongo.MongoClient(os.environ['MONGO_URL'])
+db = mongoClient["coffee"]
+collection = db["users"]
+
+# init time
 today = datetime.now(timezone('US/Pacific')).weekday()
 todayHour = datetime.now(timezone('US/Pacific')).hour
-channels = []
 
+"--------------- Functions ----------------"
 """
 @param [in] userId
 @param [in] userName
@@ -27,62 +43,30 @@ def createUser(userId, userName):
         "drinks": [0, 0, 0, 0, 0]
     }
 
-# If it friday at 4-5pm announce the winner and clear the database
 
 
 def clean_database():
-    # update time
-    today = datetime.now(timezone('US/Pacific')).weekday()
-    todayHour = datetime.now(timezone('US/Pacific')).hour
+    scoreboardData = []
+    queryUsers = collection.find()
+    for users in queryUsers:
+        totalDrinks = 0
+        for drinks in users["drinks"]:
+            totalDrinks += drinks
+        scoreboardData.append((users["name"], totalDrinks))
 
-    if today == 4 and todayHour == 4:
-        scoreboardData = []
-        queryUsers = collection.find()
-        for users in queryUsers:
-            totalDrinks = 0
-            for drinks in users["drinks"]:
-                totalDrinks += drinks
-            scoreboardData.append((users["name"], totalDrinks))
+    scoreboardData.sort(key=lambda i: i[1], reverse=True)
 
-        scoreboardData.sort(key=lambda i: i[1], reverse=True)
+    for channel in channels:
+        client.chat_postMessage(
+            channel=channel, text=f"☕ Congratulations to {scoreboardData[0][0]} drinking a total of {scoreboardData[0][1]} cups of coffee this week! ☕")
 
-        for channel in channels:
-            client.chat_postMessage(
-                channel=channel, text=f"☕ Congratulations to {scoreboardData[0][0]} drinking a total of {scoreboardData[0][1]} cups of coffee this week! ☕")
-
-        collection.update_many({}, {"$set": {"drinks": [0, 0, 0, 0, 0]}})
+    collection.update_many({}, {"$set": {"drinks": [0, 0, 0, 0, 0]}})
 
 
-
-scheduler = BackgroundScheduler()
-scheduler.add_job(func=clean_database, trigger="interval", minutes=60)
-scheduler.start()
-
-# Load dotenv
-env_path = Path('.')/'.env'
-load_dotenv(dotenv_path=env_path)
-
-# init flask and slack event adapter
-app = Flask(__name__)
-slack_event_adapter = SlackEventAdapter(
-    os.environ['SIGNING_SECRET'], '/slack/events', app)
-
-# init client and bot_id
-
-client = slack.WebClient(token=os.environ['SLACK_TOKEN'])
-BOT_ID = client.api_call("auth.test")["user_id"]
-
-# init mongo
-mongoClient = pymongo.MongoClient(os.environ['MONGO_URL'])
-db = mongoClient["coffee"]
-collection = db["users"]
-
-
+"--------------- Routes ----------------"
 @app.route("/")
 def index():
     return "Welcome to Peety-Coffee-Counter Slackbot"
-
-# Handles Tally
 
 
 @app.route('/tally', methods=['POST'])
@@ -108,7 +92,7 @@ def tally():
     oldDrinks = queryUser["drinks"]
     if oldDrinks[today] > 9:
         client.chat_postMessage(
-        channel=channel_id, text=f"{displayName} 🤔🤔🤔")
+        channel=channel_id, text=f"{displayName} Are you sure about that? 🤔🤔🤔")
         return Response(), 200
 
     oldDrinks[today] += 1
@@ -120,8 +104,6 @@ def tally():
         channel=channel_id, text=f"Hi {displayName}, You have drinken {oldDrinks[today]} cups of coffee today!")
 
     return Response(), 200
-
-# Handles reset-tally
 
 
 @app.route('/reset-tally', methods=['POST'])
@@ -152,9 +134,6 @@ def resetTally():
     client.chat_postMessage(
         channel=channel_id, text=f"Hi {displayName}, resetting your tally for today")
     return Response(), 200
-
-# Handles Scoreboard
-
 
 @app.route('/scoreboard', methods=['POST'])
 def scoreboard():
@@ -188,12 +167,12 @@ def scoreboard():
     client.chat_postMessage(
         channel=channel_id, text=f"Coffee Scoreboard {now_pst.strftime('%A, %d. %B %Y %I:%M:%S %p')}")
     client.chat_postMessage(
-        channel=channel_id, text="-----------------------------------------")
+        channel=channel_id, text="-------------------------------")
     for result in scoreboardData:
         client.chat_postMessage(
-            channel=channel_id, text=f"{result[0]}: {result[1]} cups of coffee |")
+            channel=channel_id, text=f"{result[0]}: {result[1]} cups of coffee")
     client.chat_postMessage(
-        channel=channel_id, text="-----------------------------------------")
+        channel=channel_id, text="-------------------------------")
 
     return Response(), 200
 
@@ -280,49 +259,6 @@ def leave():
         channel=channel_id, text=f"Hi {user_name}, You have left the competition.")
     return Response(), 200
 
-
-@app.route('/announce-winner-on', methods=['POST'])
-def announce_on():
-    data = request.form
-    channel_id = data.get('channel_id')
-
-    if channel_id in channels:
-        client.chat_postMessage(
-            channel=channel_id, text="channel has already turned on announement")
-        return Response(), 200
-
-    channels.append(channel_id)
-    client.chat_postMessage(
-        channel=channel_id, text="I will announce the winner on Friday from 4-5pm")
-    return Response(), 200
-
-
-@app.route('/announce-winner-off', methods=['POST'])
-def announce_off():
-    data = request.form
-    channel_id = data.get('channel_id')
-
-    if channel_id not in channels:
-        client.chat_postMessage(
-            channel=channel_id, text="channel has already turned off announement")
-        return Response(), 200
-
-    channels.remove(channel_id)
-    client.chat_postMessage(
-        channel=channel_id, text="I will not announce the winner")
-
-    return Response(), 200
-
-
-@app.route('/test', methods=['POST'])
-def test():
-    data = request.form
-    channel_id = data.get('channel_id')
-    client.chat_postMessage(
-        channel=channel_id, text="Nice Try")
-    print(data)
-    return Response(), 200
-
 @app.route('/congrats', methods=['POST'])
 def congrats():
     data = request.form
@@ -337,7 +273,14 @@ def congrats():
             channel=channel_id, text="Access Denied")
     return Response(), 200
 
-
+@app.route('/test', methods=['POST'])
+def test():
+    data = request.form
+    channel_id = data.get('channel_id')
+    client.chat_postMessage(
+        channel=channel_id, text="Nice Try")
+    print(data)
+    return Response(), 200
 
 if __name__ == "__main__":
     app.run(debug=True)
