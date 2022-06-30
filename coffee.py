@@ -81,7 +81,7 @@ def tally():
     channel_id = data.get('channel_id')
     user_id = data.get('user_id')
     user_name = data.get('user_name')
-    text = text.get('text')
+    text = data.get('text')
 
     queryUser = collection.find_one({"_id": user_id})
     if queryUser is None:
@@ -153,7 +153,7 @@ def scoreboard():
     channel_id = data.get('channel_id')
     user_id = data.get('user_id')
     user_name = data.get('user_name')
-    text = text.get('text')
+    text = data.get('text')
     queryUser = collection.find_one({"_id": user_id})
     if queryUser is None:
         client.chat_postMessage(
