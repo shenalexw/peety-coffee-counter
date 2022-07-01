@@ -349,7 +349,7 @@ def congrats():
         client.chat_postMessage(
             channel=channel_id, text="Announcing the winner")
         announceWinner(channel_id)
-        # cleanDatabase()
+        cleanDatabase()
     else:
         client.chat_postMessage(
             channel=channel_id, text="Access Denied")
