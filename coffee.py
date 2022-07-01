@@ -51,7 +51,7 @@ def createUser(userId, userName):
 
 
 
-def clean_database():
+def announceWinner(channel_id):
     scoreboardData = []
     queryUsers = collection.find()
     for users in queryUsers:
@@ -62,10 +62,28 @@ def clean_database():
 
     scoreboardData.sort(key=lambda i: i[1], reverse=True)
 
-    for channel in channels:
-        client.chat_postMessage(
-            channel=channel, text=f"☕ Congratulations to {scoreboardData[0][0]} drinking a total of {scoreboardData[0][1]} cups of coffee this week! ☕")
+    client.chat_postMessage(
+        channel=channel, text=f"☕ Congratulations to {scoreboardData[0][0]} drinking a total of {scoreboardData[0][1]} cups of coffee this week! ☕")
 
+    client.chat_postMessage(
+        channel=channel, text=f"Final Scoreboard")
+    client.chat_postMessage(
+            channel=channel_id, text="-------------------------------")
+
+    for result in scoreboardData:
+        displayTotalCupsCoffee = result[1]
+        if isinstance(displayTotalCupsCoffee, float):
+            if displayTotalCupsCoffee.is_integer():
+                displayTotalCupsCoffee = int(displayTotalCupsCoffee)
+        client.chat_postMessage(
+            channel=channel_id, text=f"{result[0]}: {displayTotalCupsCoffee} cups of coffee")
+
+    client.chat_postMessage(
+            channel=channel_id, text="-------------------------------")
+    
+    
+
+def cleanDatabase():
     collection.update_many({}, {"$set": {"drinks": [0, 0, 0, 0, 0]}})
 
 
@@ -320,7 +338,8 @@ def congrats():
     if text == os.environ['PASSWORD']:
         client.chat_postMessage(
             channel=channel_id, text="Announcing the winner")
-        # clean_database()
+        announceWinner(channel_id)
+        # cleanDatabase()
     else:
         client.chat_postMessage(
             channel=channel_id, text="Access Denied")
