@@ -63,10 +63,10 @@ def announceWinner(channel_id):
     scoreboardData.sort(key=lambda i: i[1], reverse=True)
 
     client.chat_postMessage(
-        channel=channel, text=f"☕ Congratulations to {scoreboardData[0][0]} drinking a total of {scoreboardData[0][1]} cups of coffee this week! ☕")
+        channel=channel_id, text=f"☕ Congratulations to {scoreboardData[0][0]} drinking a total of {scoreboardData[0][1]} cups of coffee this week! ☕")
 
     client.chat_postMessage(
-        channel=channel, text=f"Final Scoreboard")
+        channel=channel_id, text=f"Final Scoreboard")
     client.chat_postMessage(
             channel=channel_id, text="-------------------------------")
 
