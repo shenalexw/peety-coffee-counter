@@ -183,6 +183,7 @@ def scoreboard():
             channel=channel_id, text=f"Coffee Scoreboard {now_pst.strftime('%A, %d. %B %Y %I:%M:%S %p')}")
         client.chat_postMessage(
             channel=channel_id, text="-------------------------------")
+
         for result in scoreboardData:
             displayTotalCupsCoffee = result[1]
             if isinstance(displayTotalCupsCoffee, float):
@@ -190,6 +191,7 @@ def scoreboard():
                     displayTotalCupsCoffee = int(displayTotalCupsCoffee)
             client.chat_postMessage(
                 channel=channel_id, text=f"{result[0]}: {displayTotalCupsCoffee} cups of coffee")
+
         client.chat_postMessage(
             channel=channel_id, text="-------------------------------")
         return Response(), 200
@@ -203,8 +205,14 @@ def scoreboard():
     totalDrink = 0
     displayOtherName = queryOtherUser["name"]
     displayOtherDrinks = queryOtherUser["drinks"]
+    index = 0
+
     for drink in displayOtherDrinks:
         totalDrink += drink
+        if isinstance(drink, float):
+            if drink.is_integer():
+                displayOtherDrinks[index] = int(drink)
+        index += 1
 
     if isinstance(totalDrink, float):
         if totalDrink.is_integer():
