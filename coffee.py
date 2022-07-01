@@ -62,8 +62,11 @@ def announceWinner(channel_id):
 
     scoreboardData.sort(key=lambda i: i[1], reverse=True)
 
-    client.chat_postMessage(
-        channel=channel_id, text=f"☕ Congratulations to {scoreboardData[0][0]} drinking a total of {scoreboardData[0][1]} cups of coffee this week! ☕")
+    if scoreboardData[0][1] == scoreboardData[1][1]:
+        chugOff(channel_id, scoreboardData[0][0], scoreboardData[1][0])
+    else:
+        client.chat_postMessage(
+            channel=channel_id, text=f"☕ Congratulations to {scoreboardData[0][0]} drinking a total of {scoreboardData[0][1]} cups of coffee this week! ☕")
 
     client.chat_postMessage(
         channel=channel_id, text=f"Final Scoreboard")
@@ -85,6 +88,13 @@ def announceWinner(channel_id):
 
 def cleanDatabase():
     collection.update_many({}, {"$set": {"drinks": [0, 0, 0, 0, 0]}})
+
+def chugOff(channel_id, firstPerson, secondPerson):
+    client.chat_postMessage(
+            channel=channel_id, text="Uh oh LOOKS LIKE WE GOT A CHUG OFF!!!")
+    client.chat_postMessage(
+            channel=channel_id, text=f"{firstPerson}, {secondPerson} Meet at the cold brew stand for the CHUG OFF!!!!")
+
 
 
 "--------------- Routes ----------------"
