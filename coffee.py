@@ -119,8 +119,9 @@ def tally():
         {"_id": user_id}, {"$set": {"drinks": oldDrinks}})
 
     displayTodayDrink = oldDrinks[today]
-    if displayTodayDrink.is_integer():
-        displayTodayDrink = int(displayTodayDrink)
+    if isinstance(displayTodayDrink, float):
+        if displayTodayDrink.is_integer():
+            displayTodayDrink = int(displayTodayDrink)
     
     client.chat_postMessage(
         channel=channel_id, text=f"Hi {displayName}, You have drinken {displayTodayDrink} cups of coffee today!")
@@ -184,8 +185,9 @@ def scoreboard():
             channel=channel_id, text="-------------------------------")
         for result in scoreboardData:
             displayTotalCupsCoffee = result[1]
-            if displayTotalCupsCoffee.is_integer():
-                displayTotalCupsCoffee = int(displayTotalCupsCoffee)
+            if isinstance(displayTotalCupsCoffee, float):
+                if displayTotalCupsCoffee.is_integer():
+                    displayTotalCupsCoffee = int(displayTotalCupsCoffee)
             client.chat_postMessage(
                 channel=channel_id, text=f"{result[0]}: {displayTotalCupsCoffee} cups of coffee")
         client.chat_postMessage(
@@ -203,9 +205,10 @@ def scoreboard():
     displayOtherDrinks = queryOtherUser["drinks"]
     for drink in displayOtherDrinks:
         totalDrink += drink
-    
-    if totalDrink.is_integer():
-        totalDrink = int(totalDrink)
+
+    if isinstance(totalDrink, float):
+        if totalDrink.is_integer():
+            totalDrink = int(totalDrink)
 
     client.chat_postMessage(
             channel=channel_id, text=f"Displaying Stats for {displayOtherName}")
