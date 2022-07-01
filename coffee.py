@@ -167,7 +167,7 @@ def scoreboard():
     
     displayName = queryUser["name"]
 
-    userText = text.strip().lower().capitalize()
+    userText = text.strip()
     if userText == "":
         scoreboardData = []
         queryUsers = collection.find()
