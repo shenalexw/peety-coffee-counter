@@ -360,7 +360,7 @@ def test():
     data = request.form
     channel_id = data.get('channel_id')
     client.chat_postMessage(
-        channel=channel_id, text="Nice Try")
+        channel=channel_id, text=f"Nice Try {todayHour}")
     print(data)
     return Response(), 200
 
