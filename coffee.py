@@ -119,7 +119,7 @@ def tally():
     
     displayName = queryUser["name"]
 
-    if today > 4 and todayHour > 5:
+    if today => 4 and todayHour > 17:
         client.chat_postMessage(
             channel=channel_id, text=f"Sorry {displayName}, No coffee at this time")
         return Response(), 200
