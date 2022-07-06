@@ -132,9 +132,9 @@ def tally():
 
     userChoice = text.strip().lower()
     choiceKey = ""
-    if userChoice == "" or userChoice == "coffee":
+    if userChoice == "" or userChoice == "double":
         choiceKey = "coffee"
-    elif userChoice == "tea" or userChoice == "espresso":
+    elif userChoice == "tea" or userChoice == "single":
         choiceKey = "tea"
     else:
         client.chat_postMessage(
